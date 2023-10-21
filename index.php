@@ -36,7 +36,7 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
                 <div class="col-6">
                     <div class="row">
                         <div class="col-4">
-                            <img src="<?php echo $appLogoPath; ?>" width="100px"/>
+                            <img src="<?php echo $appLogoPath; ?>" width="100px" />
                         </div>
                         <div class="col-7">
                             <h1>Online JSON</h1>
@@ -139,6 +139,7 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
                     try {
                         event.text = JSON.stringify(JSON.parse(event.text), null, 4)
                     } catch (err) {
+                        console.log("Init ACE JSON failed: ", err);
                         // meh
                     }
                 });
@@ -211,11 +212,16 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
                 xhr.onload = function() {
                     console.log("Load Json Status", xhr.status);
                     if (xhr.status === 200) {
-                        const jsonData = JSON.parse(xhr.responseText);
-                        const jsonEditor = document.getElementById('editor');
-                        console.log("edtittt", jsonEditor);
-                        oAceJSONEditor.setValue(JSON.stringify(jsonData, null, 4));
-                        LEO_KIT.setAPILink(fileName);
+                        try {
+                            const jsonData = JSON.parse(xhr.responseText);
+                            const jsonEditor = document.getElementById('editor');
+                            console.log("edtittt", jsonEditor);
+                            oAceJSONEditor.setValue(JSON.stringify(jsonData, null, 4));
+                            LEO_KIT.setAPILink(fileName);
+                        } catch (err) {
+                            alert("Can not load JSON content! Please contact Admin");
+                            console.log("Parse JSON failed: ", err);
+                        }
                     }
                 };
                 xhr.send();
@@ -242,6 +248,7 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
                 xhr.onload = function() {
                     if (xhr.status === 200) {
                         console.log('New JSON file created successfully.');
+                        createFileName.value = "";
                         // Reload the list of JSON files
                         LEO_KIT.loadConfigs(FILE_PREFIX_BEFORE + fileName);
                     } else {
@@ -253,7 +260,7 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
             },
             deleteSelectedFile: function(selectedFileName) {
                 // Send an AJAX request to delete the selected file
-                fetch('./api/delete_file.php?file=' + selectedFileName, {
+                fetch('./api/delete_json.php?file=' + selectedFileName, {
                         method: 'DELETE'
                     })
                     .then(response => {
@@ -289,6 +296,7 @@ if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] !== $authUser
                         LEO_KIT.loadJSON(firstConfig);
                     } else {
                         LEO_KIT.loadJSON(defaultSelectFile);
+                        jsonFileSelect.value = defaultSelectFile;
                     }
 
                 });

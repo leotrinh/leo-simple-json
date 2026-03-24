@@ -1,2 +1,4 @@
 .env
 /api/db/*
+node_modules/
+backend/data/*.json

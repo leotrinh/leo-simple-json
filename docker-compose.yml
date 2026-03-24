@@ -1,0 +1,69 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: leo-json-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root123
+      MONGO_INITDB_DATABASE: leo_json
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-net
+
+  backend:
+    build: ./backend
+    container_name: leo-json-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      # Use service name "mongodb" as host inside docker network
+      MONGO_URI: mongodb://root:root123@mongodb:27017/leo_json?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-change_me_to_a_32_char_min_secret_key}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3002}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      # Persist file cache across restarts
+      - bin_cache:/app/data
+    depends_on:
+      - mongodb
+    networks:
+      - app-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_* baked at build time — set to your public domain in prod
+        # nginx tip: set to same domain, nginx routes /api/v2/* → backend
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    container_name: leo-json-frontend
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-change_me_to_random_32_char_string}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3002}
+      AUTH_TRUST_HOST: "true"
+      # Internal Docker service URL — used by server-side NextAuth authorize callback
+      BACKEND_URL: http://leo-json-backend:3001
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+volumes:
+  mongo_data:
+  bin_cache:
+
+networks:
+  app-net:
+    driver: bridge

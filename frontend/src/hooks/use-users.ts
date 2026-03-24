@@ -20,3 +20,11 @@ export const useDeleteUser = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 };
+
+export const useCreateUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.adminCreateUser,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+};

@@ -2,7 +2,9 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// BACKEND_URL = internal Docker service name (server-side only)
+// NEXT_PUBLIC_API_URL = public URL (browser-side, baked at build time)
+const API_URL = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,

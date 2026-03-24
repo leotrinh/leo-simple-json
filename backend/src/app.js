@@ -8,8 +8,10 @@ import { connectDB } from './config/db.js';
 import authRoutes from './routes/auth-routes.js';
 import binRoutes from './routes/bin-routes.js';
 import userRoutes from './routes/user-routes.js';
+import settingRoutes from './routes/setting-routes.js';
 import { readCache } from './services/cache-service.js';
 import { errorHandler } from './middleware/error-handler.js';
+import Setting from './models/setting.js';
 
 dotenv.config();
 
@@ -34,11 +36,24 @@ app.get('/api/v2', async (req, res) => {
 app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/bins', binRoutes);
 app.use('/api/v2/admin/users', userRoutes);
+app.use('/api/v2/settings', settingRoutes);
 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
-connectDB().then(() => {
+const SETTING_DEFAULTS = [
+  { key: 'allowRegistration', value: false },
+  { key: 'logoUrl', value: '' },
+  { key: 'siteName', value: 'JSON Manager' },
+];
+
+connectDB().then(async () => {
+  // Seed default settings (upsert — never overwrite existing values)
+  await Promise.all(
+    SETTING_DEFAULTS.map((s) =>
+      Setting.findOneAndUpdate({ key: s.key }, { $setOnInsert: { value: s.value } }, { upsert: true })
+    )
+  );
   app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
 });

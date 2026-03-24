@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/require-admin.js';
 import User from '../models/user.js';
@@ -8,6 +9,23 @@ import { deleteCache } from '../services/cache-service.js';
 const router = Router();
 
 router.use(requireAuth, requireAdmin);
+
+// POST /api/v2/admin/users -- admin creates a user
+router.post('/', async (req, res) => {
+  const { email, name, password, role = 'user' } = req.body;
+  if (!email || !name || !password) {
+    return res.status(400).json({ success: false, msg: 'email, name, password required' });
+  }
+  if (!['admin', 'user'].includes(role)) {
+    return res.status(400).json({ success: false, msg: 'role must be admin or user' });
+  }
+  const exists = await User.findOne({ email });
+  if (exists) return res.status(409).json({ success: false, msg: 'Email already registered' });
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await User.create({ email, name, provider: 'local', passwordHash, role });
+  res.status(201).json({ success: true, data: user });
+});
 
 // GET /api/v2/admin/users
 router.get('/', async (req, res) => {

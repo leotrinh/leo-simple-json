@@ -23,6 +23,7 @@ export interface JsonBin {
 
 export interface CreateBinInput {
   name: string;
+  slug?: string;
   group?: string;
   content?: unknown;
   isPublic?: boolean;
@@ -30,7 +31,26 @@ export interface CreateBinInput {
 
 export interface UpdateBinInput {
   name?: string;
+  slug?: string;
   group?: string;
   content?: unknown;
   isPublic?: boolean;
+}
+
+export interface PublicSettings {
+  allowRegistration: boolean;
+  logoUrl: string;
+  siteName: string;
+}
+
+export interface Setting {
+  key: string;
+  value: unknown;
+}
+
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  password: string;
+  role?: 'admin' | 'user';
 }

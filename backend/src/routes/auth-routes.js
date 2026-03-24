@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
+import Setting from '../models/setting.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -16,6 +17,11 @@ function signToken(user) {
 
 // POST /api/v2/auth/register
 router.post('/register', async (req, res) => {
+  const allowSetting = await Setting.findOne({ key: 'allowRegistration' });
+  if (!allowSetting?.value) {
+    return res.status(403).json({ success: false, msg: 'Registration is currently disabled' });
+  }
+
   const { email, name, password } = req.body;
   if (!email || !name || !password) {
     return res.status(400).json({ success: false, msg: 'email, name, password required' });

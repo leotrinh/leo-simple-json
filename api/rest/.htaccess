@@ -1,0 +1,13 @@
+# Route the REST API through index.php
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Allow real files (none besides index.php here) to be served directly
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # /api/rest/<bin> -> index.php/<bin>  (exposes PATH_INFO), query string kept
+    RewriteRule ^(.*)$ index.php/$1 [QSA,L]
+</IfModule>

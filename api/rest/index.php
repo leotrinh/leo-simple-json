@@ -18,7 +18,7 @@ require_once(__DIR__ . '/lib.php');
 // --- CORS (public API): allow the custom auth header + preflight ----------
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, j-api-key');
+header('Access-Control-Allow-Headers: Content-Type, j-api-key, X-HTTP-Method-Override');
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -30,6 +30,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 rest_require_auth();
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+// Method override: some servers/proxies (e.g. hardened nginx) reject PUT/DELETE
+// with a 405 before the request reaches PHP. Clients can instead send a POST
+// carrying the intended verb via the X-HTTP-Method-Override header or a
+// ?_method=PUT|PATCH|DELETE query param. PATCH is treated as an update (PUT).
+if ($method === 'POST') {
+    $override = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? ($_GET['_method'] ?? '');
+    $override = strtoupper(trim((string) $override));
+    if ($override === 'PATCH') {
+        $override = 'PUT';
+    }
+    if (in_array($override, ['PUT', 'DELETE'], true)) {
+        $method = $override;
+    }
+}
+
 $name = rest_resource_name();
 
 switch ($method) {

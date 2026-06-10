@@ -59,6 +59,27 @@ segment `/<bin>` (clean URLs require `mod_rewrite`).
 
 Bin `foo` maps to the file `api/db/foo.LEO`.
 
+> **Tip:** call `/api/rest/index.php?name=foo` explicitly (instead of the
+> directory `/api/rest/?name=foo`) so the request always reaches PHP — this is
+> portable across Apache and nginx.
+
+### Method override (when PUT/DELETE are blocked)
+
+Some servers/proxies (hardened nginx, shared hosting) reject `PUT`/`DELETE` with
+a `405` before the request reaches PHP. In that case send a **POST** carrying the
+intended verb via the `X-HTTP-Method-Override` header **or** a `?_method=` query
+param (`PUT`, `PATCH`, or `DELETE`; `PATCH` is treated as update):
+
+```bash
+# Update via POST (equivalent to PUT)
+curl -X POST -H "j-api-key: <KEY>" -d '{"v":2}' \
+  "<host>/api/rest/index.php?name=foo&_method=PUT"
+
+# Delete via POST + header
+curl -X POST -H "j-api-key: <KEY>" -H "X-HTTP-Method-Override: DELETE" \
+  "<host>/api/rest/index.php?name=foo"
+```
+
 ### Status codes
 
 | Code | Meaning |
